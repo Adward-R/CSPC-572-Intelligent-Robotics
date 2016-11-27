@@ -1,0 +1,280 @@
+#VRML_SIM V8.0.5 utf8
+WorldInfo {
+  info [
+    "Description"
+    "Author: first name last name <e-mail>"
+    "Date: DD MMM YYYY"
+  ]
+}
+Viewpoint {
+  orientation 0.977393 -0.155042 -0.143752 5.24726
+  position -0.0881851 2.63878 1.74294
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+}
+PointLight {
+  attenuation 1 1 1
+  location 0 0.15 0
+}
+PointLight {
+  attenuation 1 1 1
+  location 0 0.15 0
+}
+DEF supervisor Supervisor {
+  children [
+    Emitter {
+      channel 1
+    }
+  ]
+  controller "GAP1"
+}
+Transform {
+  translation 0 0 0.3
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0 0 0
+        }
+      }
+      geometry Box {
+        size 0.6 0.0001 0.01
+      }
+    }
+  ]
+}
+Transform {
+  translation 0 0 -0.3
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0 0 0
+        }
+      }
+      geometry Box {
+        size 0.6 0.0001 0.01
+      }
+    }
+  ]
+}
+Transform {
+  translation -0.3 0 0
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0 0 0
+        }
+      }
+      geometry Box {
+        size 0.01 0.0001 0.6
+      }
+    }
+  ]
+}
+Transform {
+  translation 0.3 0 0
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0 0 0
+        }
+      }
+      geometry Box {
+        size 0.01 0.0001 0.6
+      }
+    }
+  ]
+}
+Shape {
+  appearance Appearance {
+    material Material {
+      diffuseColor 0 0 0
+    }
+  }
+  geometry Box {
+    size 0.01 0.0001 0.01
+  }
+}
+DEF robot DifferentialWheels {
+  translation -0.3 0 0.3
+  children [
+    Receiver {
+      channel 1
+    }
+    Transform {
+      translation 0 0.0415 0
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.0820075 0.364731 0.8
+            }
+          }
+          geometry DEF BODY Cylinder {
+            height 0.08
+            radius 0.045
+          }
+        }
+      ]
+    }
+    Solid {
+      translation -0.045 0.025 0
+      rotation 1 0 0 4.98467
+      children [
+        DEF WHEEL Transform {
+          rotation 0 0 1 1.57
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 1 0 0
+                }
+              }
+              geometry Cylinder {
+                height 0.01
+                radius 0.025
+              }
+            }
+          ]
+        }
+      ]
+      name "left wheel"
+      boundingObject USE WHEEL
+      physics DEF PHYSICS_WHEEL Physics {
+        density -1
+        mass 0.05
+      }
+    }
+    Solid {
+      translation 0.045 0.025 0
+      rotation 1 0 0 4.58735
+      children [
+        USE WHEEL
+      ]
+      name "right wheel"
+      boundingObject USE WHEEL
+      physics USE PHYSICS_WHEEL
+    }
+    Transform {
+      translation 0.02 0.063 -0.0385
+      rotation 0 1 0 2.7489
+      children [
+        DEF UNUSED_EYE Group {
+          children [
+            Transform {
+              rotation 0 0 1 0.8
+              children [
+                Shape {
+                  appearance Appearance {
+                    material Material {
+                      diffuseColor 0.975691 0.981481 0.0252992
+                    }
+                  }
+                  geometry Box {
+                    size 0.02 0.005 0.005
+                  }
+                }
+              ]
+            }
+            Transform {
+              rotation 0 0 1 -0.8
+              children [
+                Shape {
+                  appearance Appearance {
+                    material Material {
+                      diffuseColor 0.975691 0.981481 0.0252992
+                    }
+                  }
+                  geometry Box {
+                    size 0.02 0.005 0.005
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+    Transform {
+      translation -0.02 0.063 -0.0385
+      rotation 0 1 0 0.3927
+      children [
+        USE UNUSED_EYE
+      ]
+    }
+    LightSensor {
+      translation -0.02 0.07 -0.042
+      rotation 0 1 0 2.07
+      name "ls0"
+      lookupTable [
+        0 0 0
+        4 1024 0
+      ]
+    }
+    LightSensor {
+      translation 0.02 0.07 -0.042
+      rotation 0 1 0 1.07
+      name "ls1"
+      lookupTable [
+        0 0 0
+        4 1024 0
+      ]
+    }
+    Shape {
+      appearance Appearance {
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.015 0.038 -0.041
+            0.015 0.023 -0.041
+            0 0.023 -0.0455
+            -0.015 0.023 -0.041
+            -0.015 0.038 -0.041
+            0 0.038 -0.0455
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            0.5 0
+            1 0
+            1 1
+            0.5 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 5, -1, 5, 2, 3, 4, -1
+        ]
+        texCoordIndex [
+          5, 0, 1, 4, -1, 4, 1, 2, 3, -1
+        ]
+        creaseAngle 0.9
+      }
+    }
+  ]
+  name "MyBot"
+  boundingObject Transform {
+    translation 0 0.0415 0
+    children [
+      USE BODY
+    ]
+  }
+  physics Physics {
+    density -1
+    mass 0.5
+  }
+  controller "Braitenberg"
+  axleLength 0.09
+  wheelRadius 0.025
+  speedUnit 0.1
+}
+RectangleArena {
+}
