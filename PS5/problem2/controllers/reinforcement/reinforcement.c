@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 #include <webots/emitter.h>
 #include <webots/supervisor.h>
@@ -22,19 +23,38 @@
 #define NO_STATES 27
 
 // This factor should be changed depending on how many iterations you find necessary for your algorithm to converge
-#define QLEARNING_NO_IT 10
+#define QLEARNING_NO_IT 50
 
 // Gamma is the discounted learning factor - please feel free to play around with this value and talk about its impact on the algorithm in the report
-#define GAMMA 0.8
+#define GAMMA 0.2
+
+#define MAX_PICKS 3
+#define STABLE_NO_IT 20
 
 // IMPORTANT: Please first read comments in main to understand what the variables and matrices defined represent
 
 // Read in rewards matrix
 void read_matrices(int R[NO_STATES][NO_STATES],int A[NO_STATES][NO_STATES])
 {
+    int i, j;
+    FILE *fp;
     // Read in reward matrix from reward_matrix.txt into R
+    fp = fopen("reward_matrix.txt", "r");
+    for (i = 0; i < NO_STATES; i++) {
+        for (j = 0; j < NO_STATES; j++) {
+            fscanf(fp, "%d", &R[i][j]);
+        }
+    }
+    fclose(fp);
     
     // Read in actions matrix from actions_matrix.txt into A
+    fp = fopen("actions_matrix.txt", "r");
+    for (i = 0; i < NO_STATES; i++) {
+        for (j = 0; j < NO_STATES; j++) {
+            fscanf(fp, "%d", &A[i][j]);
+        }
+    }
+    fclose(fp);
     
 }
 
@@ -95,34 +115,69 @@ void Qlearning_updates(int R[NO_STATES][NO_STATES],int Q[NO_STATES][NO_STATES],i
     // You should typically stop when you reach convergence, i.e. when the values in your Q matrix are not changing anymore from iteration to iteration
     // Feel free to stop by checking when your algorithm actually converges, by replacing the for loop with a while/do-while loop
     
+    int n_stable_it = 0, n_actions = 0, max, k;
     for (it=0; it<QLEARNING_NO_IT; it++)
     {
+        printf("%d\n", it);
         // Each episode starts from state 0
         current_state = 0;
-        do
-        {
+
+        // NEW: 
+        n_actions = 0;
+        int prevQ[NO_STATES][NO_STATES];
+        memcpy(prevQ, Q, sizeof(int)*NO_STATES*NO_STATES);
+
+        do {
             // This do loop should exit whenever the end of an episode is reached, i.e. after the robot performs 3 movements, starting with all three blocks on the starting mat, and ending with all three on one of the yellow or purple mat (this includes all the end-positions and the one goal position; the end positions, including the goal position, are states 19-26, inclusive)
             // This loop also needs to contain the update rule for the values in the Q matrix, as per the tutorial you need to read
-            
+            int next_state;
+            do {
+                next_state = rand() % NO_STATES;
+            } while (R[current_state][next_state] == -1);
+
             // After you select a random action that can be performed from your current state, you can send it to the robot arm to be performed with the function below; for now, the stub code sends the same value (1) over and over again to the arm, but you will need to change this in your code
-            robot_action = 1;
+            robot_action = A[current_state][next_state];
             wb_emitter_send(emitter, (void *) &robot_action, sizeof(int));
+
+            // NEW
+            n_actions++;
+            max = 0;
+            for (k = 0; k < NO_STATES; k++) {
+                if (Q[next_state][k] > max) {
+                    max = Q[next_state][k];
+                }
+            }
+            Q[current_state][next_state] = R[current_state][next_state] + GAMMA * max;
+            current_state = next_state;
             
-            
-        } while(wb_robot_step(TIME_STEP*1000)!=-1); // Iterate while we have not reached an end state (end states include the goal state); you will need to add the condition to stop when an end-state has been reached by adding an AND to the while condition
+        } while (wb_robot_step(TIME_STEP*1000) != -1 && n_actions < MAX_PICKS); // Iterate while we have not reached an end state (end states include the goal state); you will need to add the condition to stop when an end-state has been reached by adding an AND to the while condition
         // For now, the arm will continue doing the same movement picking up the red block just once; the next times it tries to pick it up, the red block will not be in the starting position anymore since it's not being reset;
         // When you implement the proper exit condition for the while loop, the robot will pick up all the blocks (sequentially), after which the objects will be reset through the statement below
-        
+
         // Reset the world before proceeding to next episode
         // You should not change this line of code
         reset_world(red_block_trans,red_block_rot,green_block_trans,green_block_rot,blue_block_trans,blue_block_rot,emitter);
+
+        // Compare Q to prevQ to see if stablized
+        int identical = 1;
+        for (i = 0; i < NO_STATES; i++) {
+            for (j = 0; j < NO_STATES; j++) {
+                if (Q[i][j] != prevQ[i][j]) { identical = 0; break; }
+            }
+            if (j < NO_STATES) { break; }
+        }
+
+        if (identical == 1) { 
+            n_stable_it ++;
+            if (n_stable_it > STABLE_NO_IT) { break; }
+        } else { n_stable_it = 0; }
     }
 }
 
 // State recovery from Q matrix
 void Qlearning_state_recovery(int Q[NO_STATES][NO_STATES],int state_sequence[3])
 {
-    int current_state;
+    int current_state, i, j, max, next_state = 0;
     
     // Set current state to initial state
     current_state = 0;
@@ -130,6 +185,17 @@ void Qlearning_state_recovery(int Q[NO_STATES][NO_STATES],int state_sequence[3])
     // Use Q matrix to recover the sequence of states with the highest values
     // You will always start from state 0 and perform 3 actions, so the recovered state of sequences will always have 3 states
     // In this function, you only need to populate the array state_sequence; you shouldn't print this array in this function, this functionality is accomplished in main 
+    for (i = 0; i < 3; i++) {
+        max = -1;
+        for (j = 0; j < NO_STATES; j++) {
+            if (Q[current_state][j] > max) {
+                max = Q[current_state][j];
+                next_state = j;
+            }
+        }
+        current_state = next_state;
+        state_sequence[i] = next_state;
+    } 
 }
 
 int main(int argc, char **argv)
@@ -139,6 +205,7 @@ int main(int argc, char **argv)
     
     // Necessary to initialize webots stuff
     wb_robot_init();
+    srand(time(NULL));
     
     while (wb_robot_step(TIME_STEP) == -1);
     

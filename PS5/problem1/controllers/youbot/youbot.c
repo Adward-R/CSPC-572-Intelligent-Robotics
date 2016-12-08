@@ -21,6 +21,7 @@
 #include <math.h>
 
 #define TIME_STEP 32
+#define LOW_BOUND 4
 
 
 /*
@@ -48,6 +49,32 @@ void get_green_block_center_coord(int width, int height, const unsigned char* im
   int y_ret=0;
   
   // Your code here
+  int r[width][height], g[width][height], b[width][height];
+  int i, j;
+  // Perceive RGB tunnel info by scanning each pixel in the rectangular range
+  for (i = 0; i < width; i++) {
+  	for (j = 0; j < height; j++) {
+      r[i][j] = wb_camera_image_get_red(image, width, i, j);
+      g[i][j] = wb_camera_image_get_green(image, width, i, j);
+      b[i][j] = wb_camera_image_get_blue(image, width, i, j);
+  	}
+  }
+
+  // Find center of boxes by summing up x & y coordinates, then find their mean, respectively
+  int sx = 0, sy = 0, n = 0;
+  for (i = 0; i < width; i++) {
+    for (j = 0; j < height; j++) {
+    	// Condition to judge if the color can be significantly distinguished
+      if (g[i][j] > LOW_BOUND * (r[i][j] + b[i][j]) && g[i][j] < r[i][j] * b[i][j]) {
+        sx += i;
+        sy += j;
+        n++;
+        // printf("[i j]=[%d %d], RGB=[%d %d %d]\n", i, j, r[i][j], g[i][j], b[i][j]);
+      }
+  	}
+  }
+  x_ret = round(sx / n);
+  y_ret = round(sy / n);
   
   //"Return" the x_ret and y_ret
   *x_coord = x_ret;
@@ -82,6 +109,32 @@ void get_red_block_center_coord(int width, int height, const unsigned char* imag
   int y_ret=0;
   
   // Your code here
+  int r[width][height], g[width][height], b[width][height];
+  int i, j;
+  // Perceive RGB tunnel info by scanning each pixel in the rectangular range
+  for (i = 0; i < width; i++) {
+  	for (j = 0; j < height; j++) {
+      r[i][j] = wb_camera_image_get_red(image, width, i, j);
+      g[i][j] = wb_camera_image_get_green(image, width, i, j);
+      b[i][j] = wb_camera_image_get_blue(image, width, i, j);
+  	}
+  }
+
+  // Find center of boxes by summing up x & y coordinates, then find their mean, respectively
+  int sx = 0, sy = 0, n = 0;
+  for (i = 0; i < width; i++) {
+    for (j = 0; j < height; j++) {
+    	// Condition to judge if the color can be significantly distinguished
+      if (r[i][j] > LOW_BOUND * (g[i][j] + b[i][j]) && r[i][j] < g[i][j] * b[i][j]) {
+        sx += i;
+        sy += j;
+        n++;
+        // printf("[i j]=[%d %d], RGB=[%d %d %d]\n", i, j, r[i][j], g[i][j], b[i][j]);
+      }
+    }
+  }
+  x_ret = round(sx / n);
+  y_ret = round(sy / n);
   
   //"Return" the x_ret and y_ret
   *x_coord = x_ret;
@@ -116,6 +169,32 @@ void get_blue_block_center_coord(int width, int height, const unsigned char* ima
   int y_ret=0;
   
   // Your code here
+  int r[width][height], g[width][height], b[width][height];
+  int i, j;
+  // Perceive RGB tunnel info by scanning each pixel in the rectangular range
+  for (i = 0; i < width; i++) {
+  	for (j = 0; j < height; j++) {
+      r[i][j] = wb_camera_image_get_red(image, width, i, j);
+      g[i][j] = wb_camera_image_get_green(image, width, i, j);
+      b[i][j] = wb_camera_image_get_blue(image, width, i, j);
+  	}
+  }
+
+  // Find center of boxes by summing up x & y coordinates, then find their mean, respectively
+  int sx = 0, sy = 0, n = 0;
+  for (i = 0; i < width; i++) {
+    for (j = 0; j < height; j++) {
+    	// Condition to judge if the color can be significantly distinguished
+      if (b[i][j] > LOW_BOUND * (r[i][j] + g[i][j]) && b[i][j] < r[i][j] * g[i][j]) {
+        sx += i;
+        sy += j;
+        n++;
+        // printf("[i j]=[%d %d], RGB=[%d %d %d]\n", i, j, r[i][j], g[i][j], b[i][j]);
+      }
+  	}
+  }
+  x_ret = round(sx / n);
+  y_ret = round(sy / n);
   
   //"Return" the x_ret and y_ret
   *x_coord = x_ret;
@@ -155,6 +234,17 @@ void sort_blocks(int width, int height, const unsigned char* image) {
   //                     the yellow bin and drops it in
   //reset_arm(); - resets arm to its default position
   
+  grab_ik(x_g,y_g);
+  drop_purple_bin();
+  reset_arm();
+
+  grab_ik(x_r,y_r);
+  drop_purple_bin();
+  reset_arm();
+
+  grab_ik(x_b,y_b);
+  drop_yellow_bin();
+  reset_arm();
 
   printf("Green: (%d,%d)\n", x_g, y_g);
   printf("Red: (%d,%d)\n", x_r, y_r);
