@@ -1,0 +1,16 @@
+#VRML_SIM V7.2.5 utf8
+# tags: hidden
+# black metal appearance
+#
+# Author: fabien.rohrer@cyberbotics.com
+
+PROTO BlackMetalAppearance [
+]
+{
+Appearance {
+  material Material {
+    diffuseColor 0.15 0.15 0.15
+    specularColor 0.6 0.6 0.6
+  }
+}
+}

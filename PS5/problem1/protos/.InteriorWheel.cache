@@ -1,0 +1,7 @@
+Webots Proto Cache File version 1.2
+protoFileHash: a7820cdaca314e62c4427a5386ff46a7
+containsDevices: 1
+baseType: HingeJoint
+slotType: 
+parameters: translation,anchor,name
+info: tags:\shidden\nomnidirectionnal\swheels\swith\s2D\scoulomb\sfriction\nAuthor:\sfabien.rohrer@cyberbotics.com

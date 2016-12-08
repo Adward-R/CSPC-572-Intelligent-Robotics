@@ -1,0 +1,142 @@
+#VRML_SIM V8.0.5 utf8
+WorldInfo {
+  info [
+    "Simulation showing the KUKA youBot model"
+    "Author: Fabien Rohrer <fabien.rohrer@cyberbotics.com>"
+    "Date: 24 May 2011"
+  ]
+  basicTimeStep 16
+}
+Viewpoint {
+  orientation -0.252192 0.932244 0.259463 1.68136
+  position 1.41237 0.755208 -0.667431
+  follow "robot"
+}
+Background {
+  skyColor [
+    0.580392 0.705882 0.772549
+  ]
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction -0.22 -1 0.56
+  castShadows TRUE
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 0.65 -1 0.93
+  intensity 0.4
+}
+DEF GROUND Solid {
+  translation 0.0649998 0 -0.591781
+  children [
+    DEF GROUND_SHAPE Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/parquetry.png"
+          ]
+        }
+        textureTransform TextureTransform {
+          scale 200 200
+        }
+      }
+      geometry Plane {
+        size 100 100
+      }
+    }
+  ]
+  boundingObject USE GROUND_SHAPE
+}
+DEF RedBlock KukaBox {
+  translation 0.168628 0.0124917 -0.508039
+  rotation -0.680604 0.680604 -0.271211 2.61191
+  color 1 0 0
+}
+DEF GreenBlock KukaBox {
+  translation 0.206919 0.0124917 -0.634445
+  rotation -0.571289 0.571289 -0.589286 2.07658
+  color 0 1 0
+}
+DEF BlueBlock KukaBox {
+  translation 0.165166 0.0124917 -0.763325
+  rotation -0.675041 0.675041 -0.297723 2.56286
+  color 0 0 1
+}
+Transform {
+  translation 0 0 -0.32
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 1 0
+        }
+      }
+      geometry Box {
+        size 0.2 0.0001 0.2
+      }
+    }
+  ]
+}
+Transform {
+  translation 0 0 -0.94
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.392981 0 0.39295
+        }
+      }
+      geometry Box {
+        size 0.2 0.0001 0.2
+      }
+    }
+  ]
+}
+Youbot {
+  translation -0.18471 0.10166 -0.632397
+  rotation -0.999997 -0.00100592 -0.00208775 1.57082
+  controller "robot_controller"
+  bodySlot [
+	DEF rec Receiver {
+      channel 1
+    }	
+
+    Camera {
+      translation 0.4 0 0.4
+      rotation 0 0 -1 0
+      children [
+        Transform {
+          translation 0 0 0.015
+          rotation 1 0 0 1.57
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 1 1 1
+                }
+              }
+              geometry Cylinder {
+                height 0.03
+                radius 0.01
+              }
+            }
+          ]
+        }
+      ]
+      fieldOfView 1.047
+      width 80
+      height 80
+      antiAliasing TRUE
+      noise 0.04
+    }
+  ]
+}
+DEF supervisor Supervisor {
+  children [
+    Emitter {
+      channel 1
+    }
+  ]
+  controller "reinforcement"
+}

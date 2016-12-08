@@ -1,0 +1,7 @@
+Webots Proto Cache File version 1.2
+protoFileHash: 8bf3eeb162e9c3b043f23f2f1e9c4227
+containsDevices: 1
+baseType: Robot
+slotType: 
+parameters: translation,rotation,controller,controllerArgs,bodySlot
+info: The\sKUKA\syouBot\sis\sa\spowerful,\seducational\srobot\sthat\shas\sbeen\sespecially\sdesigned\sfor\sresearch\sand\seducation\sin\smobile\smanipulation,\swhich\scounts\sas\sa\skey\stechnology\sfor\sprofessional\sservice\srobotics.\sIt\sconsists\sof\san\somnidirectional\splatform,\sa\sfive\sdegree-of-freedom\srobot\sarm\sand\sa\stwo-finger\sgripper.\nModel\sauthor:\sfabien.rohrer@cyberbotics.com
