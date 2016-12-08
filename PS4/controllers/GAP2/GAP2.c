@@ -12,8 +12,9 @@
  */
  
 #define NUM_TIME_STEPS 1000
-#define NUM_GENERATIONS 100
-#define POPULATION_SIZE 10 
+#define NUM_GENERATIONS 35
+#define POPULATION_SIZE 10
+#define N_RANK_SLICE 36
  
 #include <webots/emitter.h>
 #include <webots/robot.h>
@@ -33,23 +34,52 @@ typedef struct {
   float fitness;
 } vehicle;
 
+char palette[N_RANK_SLICE];
+
 
 /*
-Computes fitness function. Takes in a 2d float array
-in the form flat path[t][3]
+Computes fitness function. Takes in two 2d float array
+in the form float path[t][3] & trace[t][3] to along with
 */
-float fitness(float path[NUM_TIME_STEPS][3]){
+float fitness(float path[NUM_TIME_STEPS][3], 
+              float trace[NUM_TIME_STEPS][3]){
+    int t;
+    float error = 0;
     
-    return 0.0f;
+    for (t = 0; t < NUM_TIME_STEPS; t++) {
+      error += sqrt(pow(trace[t][0] - path[t][0], 2) + pow(trace[t][2] - path[t][2], 2));
+    }
+    return error;
 }
 
+float rand_gen() {
+    return ((float) rand()) / ((float) RAND_MAX);
+}
 
 /*
  * Takes in a vehicle, v, and returns that same vehicle
  * after being transformed by the mutation process
  */
 vehicle mutate(vehicle v){
-    
+    int i;
+    for (i = 0; i < 2; i++) {
+      v.genes[rand()%6] += 2 * rand_gen() - 1;
+    }
+    //for (i = 0; i < 6; i++) {
+        //v.genes[i] /= 10;
+        //if (rand_gen() < 0.8) {
+            //if (rand_gen() < 0.7) {
+                //v.genes[i] += (rand_gen() - 1) * 2;
+                //if (v.genes[i] > (i%3)+1 || v.genes[i] < -(i%3)-1) {
+                    //v.genes[i] /= 2;
+                //}
+            //} else {
+                //v.genes[i] = v.genes[rand() % 6];
+            //}
+        //} else {
+          //v.genes[i] *= 2;
+        //}
+    //}
     return v;
 }
 
@@ -58,17 +88,65 @@ vehicle mutate(vehicle v){
  * return the offspring
  */
 vehicle cross(vehicle v1, vehicle v2){
+    int a, b, i;
+    do {
+        a = rand() % 6;
+        b = rand() %  6;
+    } while (a < b);
+    if (a == b) return v1;
+    for (i = a; i <= b; i++) {
+        v1.genes[i] = v2.genes[i];
+    }
     return v1;
 }
 
+/*
+ * Function to return the index of the mating parent
+ * based on rank selection
+ */
+void init_sel_palette() {
+    int i, p = 0;
+    
+    for (i = 2; i < POPULATION_SIZE; i++) {
+        memset(palette + p, i, i - 1);
+        p += i - 1;
+    }
+}
+int rank_selection() {
+    return (int) palette[rand() % N_RANK_SLICE];
+}
+
+/*
+  qsort() helper function.
+*/
+int cmp(const void* v1, const void* v2) {
+  float arg1 = (*(const vehicle*) v1).fitness;
+  float arg2 = (*(const vehicle*) v2).fitness;
+  if (arg1 < arg2) { return -1; }
+  else if (arg1 == arg2) { return 0; }
+  else { return 1; }
+}
 
 /*
  * Takes in an array of 10 vehicle structures.
  * Must return array of 10 vehicles, which will compose the next generation
  */
 vehicle* create_next_generation(vehicle prev_gen[POPULATION_SIZE]) {
-    vehicle *next_generation = malloc(sizeof(vehicle)*POPULATION_SIZE);
-    
+    vehicle *next_generation = (vehicle *) malloc(sizeof(vehicle) * POPULATION_SIZE);
+    // sort prev_gen in ascending order w.r.t. vehicles' fitness
+    qsort(prev_gen, POPULATION_SIZE, sizeof(vehicle), cmp);
+    next_generation[0] = prev_gen[0]; // elitism
+    next_generation[1] = prev_gen[2];
+    int i;
+    for(i = 2; i < POPULATION_SIZE; i++) {
+        int p1, p2;
+    	do {
+            p1 = rank_selection();
+            p2 = rank_selection();
+    	} while (p1 == p2);
+    	vehicle v = cross(prev_gen[p1], prev_gen[p2]);
+	next_generation[i] = mutate(v);
+    }
     return next_generation;
 }
 
@@ -78,7 +156,7 @@ int main() {
   
   //intialize random library
   srand(time(NULL));
-
+  
   // do this once only
   WbNodeRef robot_node = wb_supervisor_node_get_from_def("robot");
   WbFieldRef trans_field = wb_supervisor_node_get_field(robot_node, "translation");
@@ -99,18 +177,31 @@ int main() {
       int j;
       for (j=0;j<6;j++) vehicles[v].genes[j]=5*(-0.5+(float)rand()/(float)RAND_MAX);
       
-      /*
-       * Fill in your final values here
-       * vehicles[v].genes[0] = 0;
-       * vehicles[v].genes[1] = 0;
-       * vehicles[v].genes[2] = 0;
-       * vehicles[v].genes[3] = 0;
-       * vehicles[v].genes[4] = 0;
-       * vehicles[v].genes[5] = 0;       
-       */
-            
+      // Fill in your final values here
+      //vehicles[v].genes[0] = -1.472348;
+      //vehicles[v].genes[1] = -0.759878;
+      //vehicles[v].genes[2] = -1.273254;
+      //vehicles[v].genes[3] = 0.419756;
+      //vehicles[v].genes[4] = -0.165512;
+      //vehicles[v].genes[5] = -1.755247;       
+           
       vehicles[v].fitness=0;
   }
+  
+  init_sel_palette();
+  // to init trace coordinates for robot to move along with
+  FILE *fp;
+  float trace[NUM_TIME_STEPS][3];
+  int k;
+ 
+  if ((fp = fopen("coordinates.txt", "r")) == NULL) {
+      printf("Cannot retrieve track to along!\n");
+  }
+    
+  for (k = 0; k < NUM_TIME_STEPS; k++) {
+      fscanf(fp, "%f %f %f\n", &trace[k][0], &trace[k][1], &trace[k][2]);
+  }
+  fclose(fp);
 
   int g;
   for (g=0;g<NUM_GENERATIONS;g++)
@@ -132,9 +223,9 @@ int main() {
           wb_supervisor_field_set_sf_vec3f(trans_field, INITIAL);
 
           //get the vehicle to begin
-          //web_emitter_send(emitter, "s", sizeof("start"));
+          wb_emitter_send(emitter, "s", sizeof("start"));
 
-          float  path[NUM_TIME_STEPS][3];
+          float path[NUM_TIME_STEPS][3];
           int p;
           for (p=0;p<(NUM_TIME_STEPS*3);p++) path[p/3][p%3]=0;
 
@@ -152,11 +243,11 @@ int main() {
             wb_robot_step(30);
           }
 
-          float vehicle_fitness = fitness(path);
+          float vehicle_fitness = fitness(path, trace);
           vehicles[v].fitness=vehicle_fitness;
           printf("Fitness:%f Genes: %f %f %f %f %f %f\n",vehicle_fitness,
-          vehicles[v].genes[0],vehicles[v].genes[1],vehicles[v].genes[2],
-          vehicles[v].genes[3],vehicles[v].genes[4],vehicles[v].genes[5]);
+              vehicles[v].genes[0],vehicles[v].genes[1],vehicles[v].genes[2],
+              vehicles[v].genes[3],vehicles[v].genes[4],vehicles[v].genes[5]);
       }
 
       //By now, we have run all of the vehicles in the current generation.

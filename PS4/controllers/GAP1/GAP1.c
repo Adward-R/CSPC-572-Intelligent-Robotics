@@ -12,11 +12,11 @@
  */
 
 #define NUM_TIME_STEPS 2000
-#define NUM_GENERATIONS 35
+#define NUM_GENERATIONS 10
 #define POPULATION_SIZE 10
 #define DISTANCE_INCREMENT 0.0012
 #define MAX 100000
-#define N_RANK_SLICE 55
+#define N_RANK_SLICE 36
 
 #include <webots/emitter.h>
 #include <webots/robot.h>
@@ -85,23 +85,24 @@ float rand_gen() {
  * after being transformed by the mutation process
  */
 vehicle mutate(vehicle v) {
-    int i;
-    for (i = 0; i < 6; i++) {
-        if (rand_gen() < 0.7) {
-            if (rand_gen() < 0.1) {
-                v.genes[i] = (v.genes[i] +0.01) / rand_gen();
-                if (v.genes[i] > 3) {
-                    v.genes[i] = 1 - v.genes[i];
-                }
-            } else {
-                v.genes[i] = (v.genes[i] +0.01) * rand_gen();
-                if (v.genes[i] < -3) {
-                    v.genes[i] = -1 - v.genes[i];
-                }
-            }
-        } else {
-          v.genes[i] *= 100;
-        }
+    // const int gene_bound = 2;
+    int i, k;
+    for (k = 0; k < 2; k++) {
+        i = rand() % 6;
+        v.genes[i] += 2 * rand_gen() - 1;
+        // v.genes[i] /= 10;
+        //if (rand_gen() > 0.8) {
+            //if (rand_gen() < 0.7) {
+                //v.genes[i] += (rand_gen() - 0.5) * 2;
+                //if (v.genes[i] > (i%3)+1 || v.genes[i] < -(i%3)-1) {
+                    //v.genes[i] /= 2;
+                //}
+            //} else {
+                //v.genes[i] = v.genes[rand() % 6];
+            //}
+        //} else {
+          //v.genes[i] = -v.genes[i];
+        //}
     }
     return v;
 }
@@ -114,11 +115,12 @@ vehicle cross(vehicle v1, vehicle v2) {
     int a, b, i;
     do {
         a = rand() % 6;
-        b = rand() %  6;
+        b = rand() % 6;
     } while (a < b);
     if (a == b) return v1;
+
     for (i = a; i <= b; i++) {
-        v1.genes[i] = v2.genes[i];
+        v1.genes[i] = (v1.genes[i] + v2.genes[i]) / 2;
     }
     return v1;
 }
@@ -130,9 +132,9 @@ vehicle cross(vehicle v1, vehicle v2) {
 int rank_selection() {
     int i, p = 0;
     char palette[N_RANK_SLICE];
-    for (i = 0; i < POPULATION_SIZE; i++) {
-        memset(palette + p, i, i + 1);
-        p += i + 1;
+    for (i = 2; i < POPULATION_SIZE; i++) {
+        memset(palette + p, i, i - 1);
+        p += i - 1;
     }
     return (int) palette[rand() % N_RANK_SLICE];
 }
@@ -157,6 +159,7 @@ vehicle* create_next_generation(vehicle prev_gen[POPULATION_SIZE]) {
     // sort prev_gen in ascending order w.r.t. vehicles' fitness
     qsort(prev_gen, POPULATION_SIZE, sizeof(vehicle), cmp);
     next_generation[0] = prev_gen[0]; // elitism
+    next_generation[1] = prev_gen[1];
     int i;
     for(i = 1; i < POPULATION_SIZE; i++) {
         int p1, p2;
